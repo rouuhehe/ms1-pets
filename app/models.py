@@ -49,9 +49,9 @@ class Pet(Base):
 # Estado de adopción
 # ----------------------
 class AdoptionState(enum.Enum):
-    available = "available"
-    in_process = "in_process"
-    adopted = "adopted"
+    available = "AVAILABLE"
+    in_process = "IN_PROCESS"
+    adopted = "ADOPTED"
 
 
 class AdoptionStatus(Base):

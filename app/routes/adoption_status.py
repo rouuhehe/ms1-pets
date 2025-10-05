@@ -37,7 +37,13 @@ class AdoptionStatusUpdate(BaseModel):
 # -------------------------
 @router.post("/", response_model=dict)
 def create_status(payload: AdoptionStatusCreate, db: Session = Depends(get_db)):
-    status = AdoptionStatus(pet_id=payload.pet_id, state=AdoptionState[payload.state])
+    # Map lowercase input to enum
+    state_mapping = {
+        "available": AdoptionState.available,
+        "in_process": AdoptionState.in_process,
+        "adopted": AdoptionState.adopted
+    }
+    status = AdoptionStatus(pet_id=payload.pet_id, state=state_mapping.get(payload.state, AdoptionState.available))
     db.add(status)
     db.commit()
     db.refresh(status)
@@ -55,7 +61,13 @@ def update_status(pet_id: str, payload: AdoptionStatusUpdate, db: Session = Depe
     status = db.query(AdoptionStatus).filter(AdoptionStatus.pet_id == pet_id).first()
     if not status:
         raise HTTPException(status_code=404, detail="Adoption status not found")
-    status.state = AdoptionState[payload.state]
+    # Map lowercase input to enum
+    state_mapping = {
+        "available": AdoptionState.available,
+        "in_process": AdoptionState.in_process,
+        "adopted": AdoptionState.adopted
+    }
+    status.state = state_mapping.get(payload.state, AdoptionState.available)
     db.commit()
     db.refresh(status)
     return status_to_dict(status)
