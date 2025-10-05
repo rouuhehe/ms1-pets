@@ -69,7 +69,7 @@ class AdoptionStatus(Base):
 # Vacunas
 # ----------------------
 class Vaccine(Base):
-    __tablename__ = "vaccine"
+    __tablename__ = "vaccines"  # <--- aquí va con “s” para que coincida con la DB
     id: Mapped[uuid.UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     pet_id = Column(PGUUID(as_uuid=True), ForeignKey("pet.id"), nullable=False)
     type = Column(String(50), nullable=False)
