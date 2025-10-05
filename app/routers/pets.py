@@ -33,7 +33,7 @@ class PetResponse(BaseModel):
     image_url: Optional[str] = None
 
     class Config:
-        from_attributes = True
+        orm_mode = True
 
 
 @router.post("/", response_model=PetResponse)
