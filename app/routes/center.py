@@ -1,12 +1,29 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from typing import List, Optional
+from uuid import UUID
 from ..db import get_db
 from ..models import AdoptionCenter
-from pydantic import BaseModel
-from uuid import UUID
 
 router = APIRouter(prefix="/centers", tags=["centers"])
+
+# -------------------------
+# Helper
+# -------------------------
+def center_to_dict(center: AdoptionCenter):
+    return {
+        "id": str(center.id),
+        "name": center.name,
+        "address": center.address,
+        "city": center.city,
+        "lat": center.lat,
+        "lon": center.lon,
+    }
+
+# -------------------------
+# Schemas Pydantic
+# -------------------------
+from pydantic import BaseModel
 
 class CenterCreate(BaseModel):
     name: str
@@ -22,19 +39,10 @@ class CenterUpdate(BaseModel):
     lat: Optional[float] = None
     lon: Optional[float] = None
 
-class CenterResponse(BaseModel):
-    id: UUID
-    name: str
-    address: str
-    city: str
-    lat: Optional[float] = None
-    lon: Optional[float] = None
-
-    class Config:
-        from_attributes = True
-
-
-@router.post("/", response_model=CenterResponse)
+# -------------------------
+# Endpoints
+# -------------------------
+@router.post("/", response_model=dict)
 def create_center(payload: CenterCreate, db: Session = Depends(get_db)):
     center = AdoptionCenter(
         name=payload.name,
@@ -46,23 +54,21 @@ def create_center(payload: CenterCreate, db: Session = Depends(get_db)):
     db.add(center)
     db.commit()
     db.refresh(center)
-    return center
+    return center_to_dict(center)
 
-
-@router.get("/", response_model=List[CenterResponse])
+@router.get("/", response_model=List[dict])
 def list_centers(db: Session = Depends(get_db)):
-    return db.query(AdoptionCenter).all()
+    centers = db.query(AdoptionCenter).all()
+    return [center_to_dict(c) for c in centers]
 
-
-@router.get("/{center_id}", response_model=CenterResponse)
+@router.get("/{center_id}", response_model=dict)
 def get_center(center_id: str, db: Session = Depends(get_db)):
     center = db.query(AdoptionCenter).filter(AdoptionCenter.id == center_id).first()
     if not center:
         raise HTTPException(status_code=404, detail="Center not found")
-    return center
+    return center_to_dict(center)
 
-
-@router.patch("/{center_id}", response_model=CenterResponse)
+@router.patch("/{center_id}", response_model=dict)
 def update_center(center_id: str, payload: CenterUpdate, db: Session = Depends(get_db)):
     center = db.query(AdoptionCenter).filter(AdoptionCenter.id == center_id).first()
     if not center:
@@ -74,8 +80,7 @@ def update_center(center_id: str, payload: CenterUpdate, db: Session = Depends(g
     if payload.lon is not None: center.lon = payload.lon
     db.commit()
     db.refresh(center)
-    return center
-
+    return center_to_dict(center)
 
 @router.delete("/{center_id}")
 def delete_center(center_id: str, db: Session = Depends(get_db)):

@@ -2,14 +2,31 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import date
+from uuid import UUID
 from ..db import get_db
 from ..models import Pet
-from pydantic import BaseModel
-from uuid import UUID
 
 router = APIRouter(prefix="/pets", tags=["pets"])
 
-# Pydantic schemas para request/response
+# -------------------------
+# Helper para serializar
+# -------------------------
+def pet_to_dict(pet: Pet):
+    return {
+        "id": str(pet.id),
+        "name": pet.name,
+        "species": pet.species,
+        "breed": pet.breed,
+        "birth_date": pet.birth_date.isoformat(),
+        "adoption_center_id": str(pet.adoption_center_id),
+        "image_url": pet.image_url,
+    }
+
+# -------------------------
+# Schemas Pydantic simples
+# -------------------------
+from pydantic import BaseModel
+
 class PetCreate(BaseModel):
     name: str
     species: str
@@ -23,20 +40,10 @@ class PetUpdate(BaseModel):
     breed: Optional[str] = None
     birth_date: Optional[date] = None
 
-class PetResponse(BaseModel):
-    id: UUID
-    name: str
-    species: str
-    breed: str
-    birth_date: date
-    adoption_center_id: UUID
-    image_url: Optional[str] = None
-
-    class Config:
-        orm_mode = True
-
-
-@router.post("/", response_model=PetResponse)
+# -------------------------
+# Endpoints
+# -------------------------
+@router.post("/", response_model=dict)
 def create_pet(payload: PetCreate, db: Session = Depends(get_db)):
     pet = Pet(
         name=payload.name,
@@ -48,23 +55,21 @@ def create_pet(payload: PetCreate, db: Session = Depends(get_db)):
     db.add(pet)
     db.commit()
     db.refresh(pet)
-    return pet
+    return pet_to_dict(pet)
 
-
-@router.get("/", response_model=List[PetResponse])
+@router.get("/", response_model=List[dict])
 def list_pets(db: Session = Depends(get_db)):
-    return db.query(Pet).all()
+    pets = db.query(Pet).all()
+    return [pet_to_dict(p) for p in pets]
 
-
-@router.get("/{pet_id}", response_model=PetResponse)
+@router.get("/{pet_id}", response_model=dict)
 def get_pet(pet_id: str, db: Session = Depends(get_db)):
     pet = db.query(Pet).filter(Pet.id == pet_id).first()
     if not pet:
         raise HTTPException(status_code=404, detail="Pet not found")
-    return pet
+    return pet_to_dict(pet)
 
-
-@router.patch("/{pet_id}", response_model=PetResponse)
+@router.patch("/{pet_id}", response_model=dict)
 def update_pet(pet_id: str, payload: PetUpdate, db: Session = Depends(get_db)):
     pet = db.query(Pet).filter(Pet.id == pet_id).first()
     if not pet:
@@ -75,8 +80,7 @@ def update_pet(pet_id: str, payload: PetUpdate, db: Session = Depends(get_db)):
     if payload.birth_date: pet.birth_date = payload.birth_date
     db.commit()
     db.refresh(pet)
-    return pet
-
+    return pet_to_dict(pet)
 
 @router.delete("/{pet_id}")
 def delete_pet(pet_id: str, db: Session = Depends(get_db)):
