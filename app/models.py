@@ -8,6 +8,9 @@ import enum
 
 Base = declarative_base()
 
+# ----------------------
+# Centros de adopción
+# ----------------------
 class AdoptionCenter(Base):
     __tablename__ = "adoption_centers"
     id: Mapped[uuid.UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -16,8 +19,14 @@ class AdoptionCenter(Base):
     city = Column(String(100), nullable=False)
     lat = Column(Float, nullable=True)
     lon = Column(Float, nullable=True)
-    pets = relationship("Pet", back_populates="adoption_centers")
 
+    # Relación con mascotas
+    pets = relationship("Pet", back_populates="adoption_center", cascade="all, delete-orphan")
+
+
+# ----------------------
+# Mascotas
+# ----------------------
 class Pet(Base):
     __tablename__ = "pet"
     id: Mapped[uuid.UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -28,14 +37,21 @@ class Pet(Base):
     adoption_center_id = Column(PGUUID(as_uuid=True), ForeignKey("adoption_centers.id"), nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     image_url = Column(String(255), nullable=True)
+
+    # Relaciones
     adoption_center = relationship("AdoptionCenter", back_populates="pets")
     adoption_status = relationship("AdoptionStatus", back_populates="pet", uselist=False)
     vaccines = relationship("Vaccine", back_populates="pet", cascade="all, delete-orphan")
 
+
+# ----------------------
+# Estado de adopción
+# ----------------------
 class AdoptionState(enum.Enum):
     available = "available"
     in_process = "in_process"
     adopted = "adopted"
+
 
 class AdoptionStatus(Base):
     __tablename__ = "adoption_status"
@@ -44,12 +60,20 @@ class AdoptionStatus(Base):
     state = Column(Enum(AdoptionState), nullable=False, default=AdoptionState.available)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     last_updated = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    # Relación inversa
     pet = relationship("Pet", back_populates="adoption_status")
 
+
+# ----------------------
+# Vacunas
+# ----------------------
 class Vaccine(Base):
-    __tablename__ = "vaccines"
+    __tablename__ = "vaccine"
     id: Mapped[uuid.UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     pet_id = Column(PGUUID(as_uuid=True), ForeignKey("pet.id"), nullable=False)
     type = Column(String(50), nullable=False)
     date = Column(Date, nullable=False)
+
+    # Relación inversa
     pet = relationship("Pet", back_populates="vaccines")
