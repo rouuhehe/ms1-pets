@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from .db import Base, engine
-from .routers import pets, center, adoption_status, vaccines
+from .routes import pets, center, adoption_status, vaccines
 
 # Inicializar tablas
 Base.metadata.create_all(bind=engine)
