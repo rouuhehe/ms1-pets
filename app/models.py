@@ -9,14 +9,14 @@ import enum
 Base = declarative_base()
 
 class AdoptionCenter(Base):
-    __tablename__ = "adoption_center"
+    __tablename__ = "adoption_centers"
     id: Mapped[uuid.UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = Column(String(100), nullable=False)
     address = Column(String(200), nullable=False)
     city = Column(String(100), nullable=False)
     lat = Column(Float, nullable=True)
     lon = Column(Float, nullable=True)
-    pets = relationship("Pet", back_populates="adoption_center")
+    pets = relationship("Pet", back_populates="adoption_centers")
 
 class Pet(Base):
     __tablename__ = "pet"
@@ -25,7 +25,7 @@ class Pet(Base):
     species = Column(String(50), nullable=False)
     breed = Column(String(50), nullable=False)
     birth_date = Column(Date, nullable=False)
-    adoption_center_id = Column(PGUUID(as_uuid=True), ForeignKey("adoption_center.id"), nullable=False)
+    adoption_center_id = Column(PGUUID(as_uuid=True), ForeignKey("adoption_centers.id"), nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     image_url = Column(String(255), nullable=True)
     adoption_center = relationship("AdoptionCenter", back_populates="pets")
@@ -47,7 +47,7 @@ class AdoptionStatus(Base):
     pet = relationship("Pet", back_populates="adoption_status")
 
 class Vaccine(Base):
-    __tablename__ = "vaccine"
+    __tablename__ = "vaccines"
     id: Mapped[uuid.UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     pet_id = Column(PGUUID(as_uuid=True), ForeignKey("pet.id"), nullable=False)
     type = Column(String(50), nullable=False)
