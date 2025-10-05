@@ -1,3 +1,13 @@
-from app.factory import create_app
+from fastapi import FastAPI
+from .db import Base, engine
+from .routers import pets, center, adoption_status, vaccines
 
-app = create_app()
+# Inicializar tablas
+Base.metadata.create_all(bind=engine)
+
+app = FastAPI(title="MS1 Pets")
+
+app.include_router(pets.router)
+app.include_router(center.router)
+app.include_router(adoption_status.router)
+app.include_router(vaccines.router)
