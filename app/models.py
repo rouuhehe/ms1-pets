@@ -1,8 +1,9 @@
 import uuid
-from sqlalchemy import Column, String, Date, DateTime, Float, Enum, ForeignKey
+from sqlalchemy import Column, String, Date, DateTime, Float, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import relationship, mapped_column, Mapped
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import Enum as SQLEnum
 from datetime import datetime, timezone
 import enum
 
@@ -48,20 +49,25 @@ class Pet(Base):
 # Estado de adopción
 # ----------------------
 class AdoptionState(enum.Enum):
-    AVAILABLE = "AVAILABLE"
-    IN_PROCESS = "IN_PROCESS"
-    ADOPTED = "ADOPTED"
+    available = "available"
+    in_process = "in_process"
+    adopted = "adopted"
 
 
 class AdoptionStatus(Base):
     __tablename__ = "adoption_status"
     id: Mapped[uuid.UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     pet_id = Column(PGUUID(as_uuid=True), ForeignKey("pet.id"), nullable=False, unique=True)
-    state = Column(Enum(AdoptionState), nullable=False, default=AdoptionState.available)
+    
+    state = Column(
+        SQLEnum(AdoptionState, name="adoptionstate"), 
+        nullable=False, 
+        default=AdoptionState.available.value
+    )
+
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     last_updated = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
-    # Relación inversa
     pet = relationship("Pet", back_populates="adoption_status")
 
 
