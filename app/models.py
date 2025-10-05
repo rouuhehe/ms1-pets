@@ -49,9 +49,9 @@ class Pet(Base):
 # Estado de adopción
 # ----------------------
 class AdoptionState(enum.Enum):
-    available = "AVAILABLE"
-    in_process = "IN_PROCESS"
-    adopted = "ADOPTED"
+    AVAILABLE = "AVAILABLE"
+    IN_PROCESS = "IN_PROCESS"
+    ADOPTED = "ADOPTED"
 
 
 class AdoptionStatus(Base):
@@ -62,7 +62,7 @@ class AdoptionStatus(Base):
     state = Column(
         SQLEnum(AdoptionState, name="adoptionstate"), 
         nullable=False, 
-        default=AdoptionState.available.value
+        default=AdoptionState.AVAILABLE.value
     )
 
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
