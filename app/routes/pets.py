@@ -41,6 +41,10 @@ class PetUpdate(BaseModel):
     breed: Optional[str] = None
     birth_date: Optional[date] = None
 
+class PetListResponse(BaseModel):
+    total: int
+    items: List[dict]
+
 # -------------------------
 # Endpoints
 # -------------------------
@@ -58,18 +62,12 @@ def create_pet(payload: PetCreate, db: Session = Depends(get_db)):
     db.refresh(pet)
     return pet_to_dict(pet)
 
-@router.get("/", response_model=List[dict])
-def list_pets(
-    db: Session = Depends(get_db),
-    skip: int = Query(0, ge=0, description="Número de registros a omitir"),
-    limit: int = Query(10, ge=1, le=100, description="Número máximo de registros a retornar")
-):
+@router.get("/", response_model=PetListResponse)
+def list_pets(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
     total = db.query(Pet).count()
     pets = db.query(Pet).offset(skip).limit(limit).all()
-    return {
-        "total": total,
-        "items": [pet_to_dict(p) for p in pets]
-    }
+    return {"total": total, "items": [pet_to_dict(p) for p in pets]}
+
 
 @router.get("/{pet_id}", response_model=dict)
 def get_pet(pet_id: str, db: Session = Depends(get_db)):
