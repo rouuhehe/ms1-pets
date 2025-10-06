@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends
+from fastapi import Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import date
@@ -58,9 +59,17 @@ def create_pet(payload: PetCreate, db: Session = Depends(get_db)):
     return pet_to_dict(pet)
 
 @router.get("/", response_model=List[dict])
-def list_pets(db: Session = Depends(get_db)):
-    pets = db.query(Pet).all()
-    return [pet_to_dict(p) for p in pets]
+def list_pets(
+    db: Session = Depends(get_db),
+    skip: int = Query(0, ge=0, description="Número de registros a omitir"),
+    limit: int = Query(10, ge=1, le=100, description="Número máximo de registros a retornar")
+):
+    total = db.query(Pet).count()
+    pets = db.query(Pet).offset(skip).limit(limit).all()
+    return {
+        "total": total,
+        "items": [pet_to_dict(p) for p in pets]
+    }
 
 @router.get("/{pet_id}", response_model=dict)
 def get_pet(pet_id: str, db: Session = Depends(get_db)):
