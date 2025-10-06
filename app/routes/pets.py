@@ -1,11 +1,11 @@
-from fastapi import APIRouter, HTTPException, Depends
-from fastapi import Query
+from fastapi import APIRouter, HTTPException, Depends, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import date
 from uuid import UUID
 from ..db import get_db
 from ..models import Pet
+from pydantic import BaseModel
 
 router = APIRouter(prefix="/pets", tags=["pets"])
 
@@ -26,8 +26,6 @@ def pet_to_dict(pet: Pet):
 # -------------------------
 # Schemas Pydantic simples
 # -------------------------
-from pydantic import BaseModel
-
 class PetCreate(BaseModel):
     name: str
     species: str
@@ -45,9 +43,49 @@ class PetListResponse(BaseModel):
     total: int
     items: List[dict]
 
+class PaginatedPetsResponse(BaseModel):
+    total: int
+    page: int
+    per_page: int
+    total_pages: int
+    items: List[dict]
+
 # -------------------------
 # Endpoints
 # -------------------------
+
+# Endpoint existente: devuelve TODAS las mascotas
+@router.get("/", response_model=PetListResponse)
+def list_all_pets(db: Session = Depends(get_db)):
+    pets = db.query(Pet).all()
+    total = len(pets)
+    return {"total": total, "items": [pet_to_dict(p) for p in pets]}
+
+
+# Nuevo endpoint con paginación
+@router.get("/petsPag", response_model=PaginatedPetsResponse)
+def list_pets_paginated(
+    page: int = Query(1, ge=1),
+    per_page: int = Query(10, ge=1, le=100),
+    db: Session = Depends(get_db),
+):
+    total = db.query(Pet).count()
+    total_pages = (total + per_page - 1) // per_page  # redondeo hacia arriba
+    if page > total_pages and total_pages != 0:
+        raise HTTPException(status_code=404, detail="Page out of range")
+
+    skip = (page - 1) * per_page
+    pets = db.query(Pet).offset(skip).limit(per_page).all()
+
+    return {
+        "total": total,
+        "page": page,
+        "per_page": per_page,
+        "total_pages": total_pages,
+        "items": [pet_to_dict(p) for p in pets],
+    }
+
+
 @router.post("/", response_model=dict)
 def create_pet(payload: PetCreate, db: Session = Depends(get_db)):
     pet = Pet(
@@ -62,12 +100,6 @@ def create_pet(payload: PetCreate, db: Session = Depends(get_db)):
     db.refresh(pet)
     return pet_to_dict(pet)
 
-@router.get("/", response_model=PetListResponse)
-def list_pets(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
-    total = db.query(Pet).count()
-    pets = db.query(Pet).offset(skip).limit(limit).all()
-    return {"total": total, "items": [pet_to_dict(p) for p in pets]}
-
 
 @router.get("/{pet_id}", response_model=dict)
 def get_pet(pet_id: str, db: Session = Depends(get_db)):
@@ -75,6 +107,7 @@ def get_pet(pet_id: str, db: Session = Depends(get_db)):
     if not pet:
         raise HTTPException(status_code=404, detail="Pet not found")
     return pet_to_dict(pet)
+
 
 @router.patch("/{pet_id}", response_model=dict)
 def update_pet(pet_id: str, payload: PetUpdate, db: Session = Depends(get_db)):
@@ -88,6 +121,7 @@ def update_pet(pet_id: str, payload: PetUpdate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(pet)
     return pet_to_dict(pet)
+
 
 @router.delete("/{pet_id}")
 def delete_pet(pet_id: str, db: Session = Depends(get_db)):
