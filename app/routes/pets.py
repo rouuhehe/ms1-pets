@@ -55,10 +55,12 @@ class PaginatedPetsResponse(BaseModel):
 # -------------------------
 
 # Endpoint existente: devuelve TODAS las mascotas
-@router.get("/", response_model=PetListResponse)
+@router.get("/all", response_model=PetListResponse)
 def list_pets(db: Session = Depends(get_db)):
     pets = db.query(Pet).all()
-    return [pet_to_dict(p) for p in pets]
+    return {
+        "total": len(pets),
+        "items": [pet_to_dict(p) for p in pets]}
 
 
 # Nuevo endpoint con paginación
