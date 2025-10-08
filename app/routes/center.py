@@ -5,7 +5,7 @@ from uuid import UUID
 from ..db import get_db
 from ..models import AdoptionCenter
 
-router = APIRouter(prefix="/centers", tags=["centers"])
+router = APIRouter(prefix="/ms1/centers", tags=["centers"])
 
 # -------------------------
 # Helper

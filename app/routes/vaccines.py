@@ -6,7 +6,7 @@ from uuid import UUID
 from ..db import get_db
 from ..models import Vaccine
 
-router = APIRouter(prefix="/vaccines", tags=["vaccines"])
+router = APIRouter(prefix="/ms1/vaccines", tags=["vaccines"])
 
 # -------------------------
 # Helper

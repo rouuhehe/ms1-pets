@@ -7,7 +7,7 @@ from ..db import get_db
 from ..models import Pet
 from pydantic import BaseModel
 
-router = APIRouter(prefix="/pets", tags=["pets"])
+router = APIRouter(prefix="/ms1/pets", tags=["pets"])
 
 # -------------------------
 # Helper para serializar

@@ -6,7 +6,7 @@ from datetime import datetime
 from ..db import get_db
 from ..models import AdoptionStatus, AdoptionState
 
-router = APIRouter(prefix="/adoption-status", tags=["adoption_status"])
+router = APIRouter(prefix="/ms1/adoption-status", tags=["adoption_status"])
 
 # -------------------------
 # Helper
